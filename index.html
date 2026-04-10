@@ -226,21 +226,21 @@
   <div class="wrap">
     <section class="hero">
       <h1>📷 Nhận diện đồ vật bằng AI</h1>
-      <p>Chụp ảnh hoặc tải ảnh lên → bấm <b>Detect with AI</b> → hệ thống trả về tên đồ vật bằng tiếng Anh.</p>
+      <p>Chụp ảnh hoặc tải ảnh lên → bấm <b>Nhận diện bằng AI</b> → hệ thống trả về tên đồ vật bằng tiếng Anh.</p>
     </section>
 
     <section class="layout">
       <div class="card">
         <h2>1) Thao tác</h2>
         <div class="controls">
-          <button id="startBtn" class="btn">Start Camera</button>
-          <button id="snapBtn" class="btn secondary" disabled>Take Photo</button>
+          <button id="startBtn" class="btn">Mở camera</button>
+          <button id="snapBtn" class="btn secondary" disabled>Chụp ảnh</button>
 
           <label class="btn file">
-            Upload Image
+            Tải ảnh lên
             <input id="fileInput" type="file" accept="image/*" />
           </label>
-          <button id="detectBtn" class="btn">Detect with AI</button>
+          <button id="detectBtn" class="btn">Nhận diện bằng AI</button>
         </div>
 
         <div class="hint">
@@ -249,19 +249,19 @@
 
         <div class="status">
           <span class="dot" id="statusDot"></span>
-          <span id="status">Ready</span>
+          <span id="status">Sẵn sàng</span>
         </div>
       </div>
 
       <div class="card">
         <h2>2) Kết quả</h2>
         <div class="result">
-          <span class="label">Object name (English)</span>
+          <span class="label">Tên đồ vật (tiếng Anh)</span>
           <div id="resultValue" class="value">—</div>
         </div>
 
         <details>
-          <summary>Chi tiết phản hồi (debug)</summary>
+          <summary>Chi tiết phản hồi (kỹ thuật)</summary>
           <pre id="raw"></pre>
         </details>
       </div>
@@ -310,9 +310,9 @@
         });
         video.srcObject = stream;
         snapBtn.disabled = false;
-        setStatus('Camera started');
+        setStatus('Đã mở camera');
       } catch (e) {
-        setStatus('Không mở được camera, bạn hãy dùng Upload Image.', 'error');
+        setStatus('Không mở được camera, bạn hãy dùng Tải ảnh lên.', 'error');
       }
     };
 
@@ -321,7 +321,7 @@
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      setStatus('Photo captured');
+      setStatus('Đã chụp ảnh');
     };
 
     fileInput.onchange = (e) => {
@@ -332,7 +332,7 @@
         canvas.width = img.width;
         canvas.height = img.height;
         ctx.drawImage(img, 0, 0);
-        setStatus('Image loaded');
+        setStatus('Đã tải ảnh');
       };
       img.src = URL.createObjectURL(file);
     };
@@ -340,7 +340,7 @@
     async function canvasToBase64Jpeg(quality = 0.8, maxSize = 1280) {
       const srcW = canvas.width;
       const srcH = canvas.height;
-      if (!srcW || !srcH) throw new Error('No image selected');
+      if (!srcW || !srcH) throw new Error('Chưa có ảnh đầu vào');
 
       let targetW = srcW;
       let targetH = srcH;
@@ -361,7 +361,7 @@
     detectBtn.onclick = async () => {
       try {
         detectBtn.disabled = true;
-        setStatus('Sending image to AI...');
+        setStatus('Đang gửi ảnh cho AI...');
         const imageDataUrl = await canvasToBase64Jpeg();
 
         const res = await fetch('/api/detect', {
@@ -379,17 +379,17 @@
         try {
           data = JSON.parse(rawText);
         } catch {
-          throw new Error(`Server returned non-JSON response (${res.status}).`);
+          throw new Error(`Máy chủ trả về dữ liệu không phải JSON (${res.status}).`);
         }
 
         if (!res.ok) throw new Error(data?.error || `API error ${res.status}`);
 
-        const objectName = data.objectName || 'Unknown';
+        const objectName = data.objectName || 'Không xác định';
         resultValueEl.textContent = objectName;
         rawEl.textContent = JSON.stringify(data, null, 2);
-        setStatus('Done');
+        setStatus('Hoàn tất');
       } catch (err) {
-        setStatus('Failed: ' + err.message, 'error');
+        setStatus('Lỗi: ' + err.message, 'error');
       } finally {
         detectBtn.disabled = false;
       }
