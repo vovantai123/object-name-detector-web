@@ -1,51 +1,289 @@
 <!doctype html>
-<html lang="en">
+<html lang="vi">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Object Name Detector (AI API)</title>
   <style>
-    body { font-family: Inter, system-ui, Arial; background:#0f172a; color:#e2e8f0; margin:0; padding:24px; }
-    .wrap { max-width: 900px; margin: 0 auto; }
-    .card { background:#111827; border:1px solid #334155; border-radius:12px; padding:16px; margin-bottom:16px; }
-    button,input { border-radius:10px; padding:10px 14px; border:none; }
-    button { background:#1d4ed8; color:#fff; font-weight:600; cursor:pointer; }
-    button.secondary { background:#334155; }
-    button:disabled { opacity:.6; cursor:not-allowed; }
-    video,canvas { width:100%; max-width:640px; border-radius:10px; border:1px solid #334155; background:#000; }
-    .row { display:flex; gap:10px; flex-wrap:wrap; }
-    .muted { color:#94a3b8; }
+    :root {
+      --bg: #0b1020;
+      --card: #131a2f;
+      --line: #273252;
+      --text: #e8ecf8;
+      --muted: #aab6d3;
+      --primary: #3b82f6;
+      --primary-2: #2563eb;
+      --ok: #22c55e;
+      --err: #ef4444;
+      --shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(800px 500px at 15% -10%, #1f2c55 0%, transparent 55%),
+        radial-gradient(700px 500px at 100% 0%, #1a3d5c 0%, transparent 52%),
+        var(--bg);
+      min-height: 100vh;
+      padding: 22px;
+    }
+
+    .wrap { max-width: 980px; margin: 0 auto; }
+
+    .hero {
+      background: linear-gradient(135deg, rgba(59,130,246,.2), rgba(37,99,235,.12));
+      border: 1px solid #38508f;
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+      margin-bottom: 14px;
+    }
+
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: 1.7rem;
+      line-height: 1.2;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    @media (min-width: 980px) {
+      .layout {
+        grid-template-columns: 1.12fr .88fr;
+      }
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .card h2 {
+      margin: 0 0 8px;
+      font-size: 1.06rem;
+    }
+
+    .muted { color: var(--muted); }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    @media (max-width: 540px) {
+      .controls { grid-template-columns: 1fr; }
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 12px;
+      padding: 11px 14px;
+      font-weight: 700;
+      font-size: .95rem;
+      cursor: pointer;
+      transition: .16s ease;
+      color: #fff;
+      background: var(--primary);
+    }
+
+    .btn:hover { transform: translateY(-1px); background: var(--primary-2); }
+    .btn:disabled { cursor: not-allowed; opacity: .55; transform: none; }
+
+    .btn.secondary {
+      background: #32405f;
+    }
+
+    .btn.file {
+      background: #32405f;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn.file input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .hint {
+      background: #0f1529;
+      border: 1px dashed #2f406b;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: .92rem;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid #304573;
+      background: #121c35;
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: .9rem;
+      margin-top: 10px;
+      color: #c8d5f5;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--ok);
+      box-shadow: 0 0 10px rgba(34,197,94,.7);
+    }
+
+    .stage {
+      display: grid;
+      gap: 10px;
+    }
+
+    video, canvas {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid #2e3f69;
+      background: #05070f;
+      min-height: 210px;
+      object-fit: cover;
+    }
+
+    .result {
+      margin-top: 6px;
+      background: #0f1529;
+      border: 1px solid #2f406b;
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .result .label {
+      font-size: .92rem;
+      color: var(--muted);
+      margin-bottom: 5px;
+      display: block;
+    }
+
+    .result .value {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #9bc5ff;
+      word-break: break-word;
+    }
+
+    details {
+      margin-top: 12px;
+      border: 1px solid #31406b;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #0d1427;
+    }
+
+    summary {
+      padding: 10px 12px;
+      cursor: pointer;
+      font-weight: 700;
+      color: #c9d7f6;
+      user-select: none;
+    }
+
+    pre {
+      margin: 0;
+      padding: 0 12px 12px;
+      max-height: 260px;
+      overflow: auto;
+      white-space: pre-wrap;
+      color: #b8c8ec;
+      font-size: .85rem;
+      line-height: 1.45;
+    }
+
+    .error { color: #ff8f8f; }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>📷 Object Name Detector (English)</h1>
-    <p class="muted">Capture/upload an image, then call your AI model API to return the object name in English.</p>
+    <section class="hero">
+      <h1>📷 Nhận diện đồ vật bằng AI</h1>
+      <p>Chụp ảnh hoặc tải ảnh lên → bấm <b>Detect with AI</b> → hệ thống trả về tên đồ vật bằng tiếng Anh.</p>
+    </section>
 
-    <div class="card">
-      <div class="row">
-        <button id="startBtn">Start Camera</button>
-        <button id="snapBtn" class="secondary" disabled>Take Photo</button>
-        <input id="fileInput" type="file" accept="image/*" />
-        <button id="detectBtn">Detect with AI</button>
+    <section class="layout">
+      <div class="card">
+        <h2>1) Thao tác</h2>
+        <div class="controls">
+          <button id="startBtn" class="btn">Start Camera</button>
+          <button id="snapBtn" class="btn secondary" disabled>Take Photo</button>
+
+          <label class="btn file">
+            Upload Image
+            <input id="fileInput" type="file" accept="image/*" />
+          </label>
+          <button id="detectBtn" class="btn">Detect with AI</button>
+        </div>
+
+        <div class="hint">
+          Mẹo: Ảnh rõ, đủ sáng, chỉ có 1 vật thể chính sẽ cho kết quả chính xác hơn.
+        </div>
+
+        <div class="status">
+          <span class="dot" id="statusDot"></span>
+          <span id="status">Ready</span>
+        </div>
       </div>
-      <p id="status" class="muted">Ready</p>
-    </div>
 
-    <div class="card">
-      <video id="video" autoplay playsinline></video>
-      <canvas id="canvas" width="640" height="480"></canvas>
-      <h3 id="result">Result: —</h3>
-      <pre id="raw" class="muted" style="white-space:pre-wrap"></pre>
-    </div>
+      <div class="card">
+        <h2>2) Kết quả</h2>
+        <div class="result">
+          <span class="label">Object name (English)</span>
+          <div id="resultValue" class="value">—</div>
+        </div>
+
+        <details>
+          <summary>Chi tiết phản hồi (debug)</summary>
+          <pre id="raw"></pre>
+        </details>
+      </div>
+
+      <div class="card" style="grid-column: 1 / -1;">
+        <h2>3) Ảnh đầu vào</h2>
+        <div class="stage">
+          <video id="video" autoplay playsinline></video>
+          <canvas id="canvas" width="640" height="480"></canvas>
+        </div>
+      </div>
+    </section>
   </div>
 
   <script>
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
+
     const statusEl = document.getElementById('status');
-    const resultEl = document.getElementById('result');
+    const statusDot = document.getElementById('statusDot');
+    const resultValueEl = document.getElementById('resultValue');
     const rawEl = document.getElementById('raw');
 
     const startBtn = document.getElementById('startBtn');
@@ -55,14 +293,26 @@
 
     let stream;
 
+    function setStatus(text, type = 'ok') {
+      statusEl.textContent = text;
+      statusEl.classList.toggle('error', type === 'error');
+      statusDot.style.background = type === 'error' ? '#ef4444' : '#22c55e';
+      statusDot.style.boxShadow = type === 'error'
+        ? '0 0 10px rgba(239,68,68,.65)'
+        : '0 0 10px rgba(34,197,94,.7)';
+    }
+
     startBtn.onclick = async () => {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' },
+          audio: false
+        });
         video.srcObject = stream;
         snapBtn.disabled = false;
-        statusEl.textContent = 'Camera started';
+        setStatus('Camera started');
       } catch (e) {
-        statusEl.textContent = 'Cannot access camera, use upload instead.';
+        setStatus('Không mở được camera, bạn hãy dùng Upload Image.', 'error');
       }
     };
 
@@ -71,7 +321,7 @@
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      statusEl.textContent = 'Photo captured';
+      setStatus('Photo captured');
     };
 
     fileInput.onchange = (e) => {
@@ -82,7 +332,7 @@
         canvas.width = img.width;
         canvas.height = img.height;
         ctx.drawImage(img, 0, 0);
-        statusEl.textContent = 'Image loaded';
+        setStatus('Image loaded');
       };
       img.src = URL.createObjectURL(file);
     };
@@ -110,7 +360,8 @@
 
     detectBtn.onclick = async () => {
       try {
-        statusEl.textContent = 'Sending image to AI...';
+        detectBtn.disabled = true;
+        setStatus('Sending image to AI...');
         const imageDataUrl = await canvasToBase64Jpeg();
 
         const res = await fetch('/api/detect', {
@@ -133,11 +384,14 @@
 
         if (!res.ok) throw new Error(data?.error || `API error ${res.status}`);
 
-        resultEl.textContent = `Result: ${data.objectName || 'Unknown'}`;
+        const objectName = data.objectName || 'Unknown';
+        resultValueEl.textContent = objectName;
         rawEl.textContent = JSON.stringify(data, null, 2);
-        statusEl.textContent = 'Done';
+        setStatus('Done');
       } catch (err) {
-        statusEl.textContent = 'Failed: ' + err.message;
+        setStatus('Failed: ' + err.message, 'error');
+      } finally {
+        detectBtn.disabled = false;
       }
     };
   </script>
