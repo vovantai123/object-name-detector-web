@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Object Name Detector (AI API)</title>
+  <style>
+    body { font-family: Inter, system-ui, Arial; background:#0f172a; color:#e2e8f0; margin:0; padding:24px; }
+    .wrap { max-width: 900px; margin: 0 auto; }
+    .card { background:#111827; border:1px solid #334155; border-radius:12px; padding:16px; margin-bottom:16px; }
+    button,input { border-radius:10px; padding:10px 14px; border:none; }
+    button { background:#1d4ed8; color:#fff; font-weight:600; cursor:pointer; }
+    button.secondary { background:#334155; }
+    button:disabled { opacity:.6; cursor:not-allowed; }
+    video,canvas { width:100%; max-width:640px; border-radius:10px; border:1px solid #334155; background:#000; }
+    .row { display:flex; gap:10px; flex-wrap:wrap; }
+    .muted { color:#94a3b8; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>📷 Object Name Detector (English)</h1>
+    <p class="muted">Capture/upload an image, then call your AI model API to return the object name in English.</p>
+
+    <div class="card">
+      <div class="row">
+        <button id="startBtn">Start Camera</button>
+        <button id="snapBtn" class="secondary" disabled>Take Photo</button>
+        <input id="fileInput" type="file" accept="image/*" />
+        <button id="detectBtn">Detect with AI</button>
+      </div>
+      <p id="status" class="muted">Ready</p>
+    </div>
+
+    <div class="card">
+      <video id="video" autoplay playsinline></video>
+      <canvas id="canvas" width="640" height="480"></canvas>
+      <h3 id="result">Result: —</h3>
+      <pre id="raw" class="muted" style="white-space:pre-wrap"></pre>
+    </div>
+  </div>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const statusEl = document.getElementById('status');
+    const resultEl = document.getElementById('result');
+    const rawEl = document.getElementById('raw');
+
+    const startBtn = document.getElementById('startBtn');
+    const snapBtn = document.getElementById('snapBtn');
+    const fileInput = document.getElementById('fileInput');
+    const detectBtn = document.getElementById('detectBtn');
+
+    let stream;
+
+    startBtn.onclick = async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+        video.srcObject = stream;
+        snapBtn.disabled = false;
+        statusEl.textContent = 'Camera started';
+      } catch (e) {
+        statusEl.textContent = 'Cannot access camera, use upload instead.';
+      }
+    };
+
+    snapBtn.onclick = () => {
+      if (!video.videoWidth) return;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      statusEl.textContent = 'Photo captured';
+    };
+
+    fileInput.onchange = (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const img = new Image();
+      img.onload = () => {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+        statusEl.textContent = 'Image loaded';
+      };
+      img.src = URL.createObjectURL(file);
+    };
+
+    async function canvasToBase64Jpeg(quality = 0.8, maxSize = 1280) {
+      const srcW = canvas.width;
+      const srcH = canvas.height;
+      if (!srcW || !srcH) throw new Error('No image selected');
+
+      let targetW = srcW;
+      let targetH = srcH;
+      const longest = Math.max(srcW, srcH);
+      if (longest > maxSize) {
+        const scale = maxSize / longest;
+        targetW = Math.round(srcW * scale);
+        targetH = Math.round(srcH * scale);
+      }
+
+      const tmp = document.createElement('canvas');
+      tmp.width = targetW;
+      tmp.height = targetH;
+      tmp.getContext('2d').drawImage(canvas, 0, 0, targetW, targetH);
+      return tmp.toDataURL('image/jpeg', quality);
+    }
+
+    detectBtn.onclick = async () => {
+      try {
+        statusEl.textContent = 'Sending image to AI...';
+        const imageDataUrl = await canvasToBase64Jpeg();
+
+        const res = await fetch('/api/detect', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'ngrok-skip-browser-warning': 'true'
+          },
+          body: JSON.stringify({ imageDataUrl })
+        });
+
+        const rawText = await res.text();
+        let data;
+        try {
+          data = JSON.parse(rawText);
+        } catch {
+          throw new Error(`Server returned non-JSON response (${res.status}).`);
+        }
+
+        if (!res.ok) throw new Error(data?.error || `API error ${res.status}`);
+
+        resultEl.textContent = `Result: ${data.objectName || 'Unknown'}`;
+        rawEl.textContent = JSON.stringify(data, null, 2);
+        statusEl.textContent = 'Done';
+      } catch (err) {
+        statusEl.textContent = 'Failed: ' + err.message;
+      }
+    };
+  </script>
+</body>
+</html>
