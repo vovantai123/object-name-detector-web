@@ -227,6 +227,10 @@
 
     .error { color: #ff8f8f; }
 
+    .mobile-bar {
+      display: none;
+    }
+
     @media (max-width: 768px) {
       body { padding: 12px; }
       .hero { padding: 14px; border-radius: 14px; }
@@ -246,6 +250,30 @@
       .controls { grid-template-columns: 1fr; }
       .btn.primary-action { grid-column: auto; }
       .status { width: 100%; justify-content: center; }
+
+      .mobile-bar {
+        position: fixed;
+        left: 10px;
+        right: 10px;
+        bottom: calc(10px + env(safe-area-inset-bottom));
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        padding: 8px;
+        border: 1px solid #334b7c;
+        border-radius: 14px;
+        background: rgba(10, 16, 32, .92);
+        backdrop-filter: blur(8px);
+        z-index: 99;
+      }
+
+      .mobile-bar .btn {
+        min-height: 44px;
+      }
+
+      body {
+        padding-bottom: calc(100px + env(safe-area-inset-bottom));
+      }
     }
   </style>
 </head>
@@ -303,6 +331,11 @@
     </section>
   </div>
 
+  <div class="mobile-bar">
+    <button id="snapBtnMobile" class="btn secondary" disabled>Chụp nhanh</button>
+    <button id="detectBtnMobile" class="btn primary-action">Nhận diện ngay</button>
+  </div>
+
   <script>
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
@@ -315,8 +348,10 @@
 
     const startBtn = document.getElementById('startBtn');
     const snapBtn = document.getElementById('snapBtn');
+    const snapBtnMobile = document.getElementById('snapBtnMobile');
     const fileInput = document.getElementById('fileInput');
     const detectBtn = document.getElementById('detectBtn');
+    const detectBtnMobile = document.getElementById('detectBtnMobile');
 
     let stream;
 
@@ -337,19 +372,23 @@
         });
         video.srcObject = stream;
         snapBtn.disabled = false;
+        snapBtnMobile.disabled = false;
         setStatus('Đã mở camera');
       } catch (e) {
         setStatus('Không mở được camera, bạn hãy dùng Tải ảnh lên.', 'error');
       }
     };
 
-    snapBtn.onclick = () => {
+    function takePhoto() {
       if (!video.videoWidth) return;
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       setStatus('Đã chụp ảnh');
-    };
+    }
+
+    snapBtn.onclick = takePhoto;
+    snapBtnMobile.onclick = takePhoto;
 
     fileInput.onchange = (e) => {
       const file = e.target.files?.[0];
@@ -385,9 +424,10 @@
       return tmp.toDataURL('image/jpeg', quality);
     }
 
-    detectBtn.onclick = async () => {
+    async function detectObject() {
       try {
         detectBtn.disabled = true;
+        detectBtnMobile.disabled = true;
         setStatus('Đang gửi ảnh cho AI...');
         const imageDataUrl = await canvasToBase64Jpeg();
 
@@ -419,8 +459,12 @@
         setStatus('Lỗi: ' + err.message, 'error');
       } finally {
         detectBtn.disabled = false;
+        detectBtnMobile.disabled = false;
       }
-    };
+    }
+
+    detectBtn.onclick = detectObject;
+    detectBtnMobile.onclick = detectObject;
   </script>
 </body>
 </html>
