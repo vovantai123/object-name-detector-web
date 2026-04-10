@@ -30,6 +30,7 @@
         var(--bg);
       min-height: 100vh;
       padding: 22px;
+      padding-bottom: calc(22px + env(safe-area-inset-bottom));
     }
 
     .wrap { max-width: 980px; margin: 0 auto; }
@@ -110,6 +111,11 @@
 
     .btn.secondary {
       background: #32405f;
+    }
+
+    .btn.primary-action {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      box-shadow: 0 8px 22px rgba(37,99,235,.35);
     }
 
     .btn.file {
@@ -220,6 +226,27 @@
     }
 
     .error { color: #ff8f8f; }
+
+    @media (max-width: 768px) {
+      body { padding: 12px; }
+      .hero { padding: 14px; border-radius: 14px; }
+      .hero h1 { font-size: 1.35rem; }
+      .hero p { font-size: .93rem; }
+      .card { padding: 12px; border-radius: 14px; }
+      .controls { grid-template-columns: 1fr 1fr; gap: 8px; }
+      .btn { min-height: 44px; padding: 10px 10px; font-size: .92rem; }
+      .btn.primary-action { grid-column: 1 / -1; min-height: 48px; font-size: .98rem; }
+      video, canvas { min-height: 170px; }
+      .result .value { font-size: 1.15rem; }
+      details { margin-top: 10px; }
+      pre { max-height: 180px; font-size: .8rem; }
+    }
+
+    @media (max-width: 420px) {
+      .controls { grid-template-columns: 1fr; }
+      .btn.primary-action { grid-column: auto; }
+      .status { width: 100%; justify-content: center; }
+    }
   </style>
 </head>
 <body>
@@ -240,7 +267,7 @@
             Tải ảnh lên
             <input id="fileInput" type="file" accept="image/*" />
           </label>
-          <button id="detectBtn" class="btn">Nhận diện bằng AI</button>
+          <button id="detectBtn" class="btn primary-action">Nhận diện bằng AI</button>
         </div>
 
         <div class="hint">
